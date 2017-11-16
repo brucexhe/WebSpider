@@ -7,7 +7,7 @@ How to use?
 
 #demo
 
- static void Main(string[] args)
+		static void Main(string[] args)
         {
             CrawlerConfig config = new CrawlerConfig();
             config.Encoding = Encoding.GetEncoding("GB2312");
