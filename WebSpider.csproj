@@ -45,6 +45,7 @@
     <Compile Include="AllCrawlCompletedArgs.cs" />
     <Compile Include="CrawlerConfig.cs" />
     <Compile Include="Crawler.cs" />
+    <Compile Include="CrawlThread.cs" />
     <Compile Include="PageContent.cs" />
     <Compile Include="PageCrawlCompletedArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

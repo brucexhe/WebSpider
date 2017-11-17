@@ -12,12 +12,11 @@ namespace WebSpider
     public class Crawler
     {
         private bool RUN_STATUS = false;
-        private int EMPTY_QUEUE_COUNT = 0;
         private Queue<string> URLQueue = new Queue<string>();
         private List<string> HistoryUrlList = new List<string>();
         private readonly object LockURL = new object();
         private CrawlerConfig Config;
-        private List<System.Threading.Thread> ThreadList = new List<System.Threading.Thread>();
+        private List<CrawlThread> ThreadList = new List<CrawlThread>();
         private AllCrawlCompletedArgs AllCrawlCompletedArgs;
 
         public delegate bool CanCrawlHandle(string url);
@@ -89,26 +88,38 @@ namespace WebSpider
 
         public void Start()
         {
-            RUN_STATUS = true;
             InitConfig();
-
+            RUN_STATUS = true;
 
             for (int i = 0; i < Config.ThreadCount; i++)
             {
-                ThreadList.Add(new System.Threading.Thread(new System.Threading.ThreadStart(WorkThread)));
-                ThreadList[i].Start();
+                var th = new CrawlThread();
+                th.Thread = new System.Threading.Thread(new System.Threading.ThreadStart(WorkThread));
+                th.Name = "th_" + i;
+                th.Thread.Name = th.Name;
+                th.RunStatus = true;
+
+
+                ThreadList.Add(th);
+                ThreadList[i].Thread.Start();
             }
 
             Thread threadCheckCompleted = new Thread(new ThreadStart(() =>
             {
                 while (true)
                 {
+                    Thread.Sleep(100);
                     if (RUN_STATUS == false)
                     {
                         AllCrawlCompletedEvent(this, AllCrawlCompletedArgs);
                         break;
                     }
-                    Thread.Sleep(100);
+                    if (ThreadList.Count(F => F.RunStatus) == 0)
+                    {
+                        AllCrawlCompletedEvent(this, AllCrawlCompletedArgs);
+                        break;
+                    }
+
                 }
             }));
             threadCheckCompleted.Start();
@@ -135,27 +146,21 @@ namespace WebSpider
                     }
                 }
 
-                if (HistoryUrlList.Contains(url))
+                if (!string.IsNullOrWhiteSpace(url))
                 {
-                    continue;
+                    if (this.CanCrawlEvent(url))
+                    {
+                        CrawlContent(url);
+                    }
+                    else
+                    {
+                        continue;
+                    }
                 }
                 else
                 {
-                    HistoryUrlList.Add(url);
-                }
-
-                if (!string.IsNullOrWhiteSpace(url) && this.CanCrawlEvent(url))
-                {
-                    CrawlContent(url);
-                }
-                else
-                {
-                    EMPTY_QUEUE_COUNT++;
-                }
-                if (EMPTY_QUEUE_COUNT >= Config.ThreadCount * 2)
-                {
-                    RUN_STATUS = false;
-
+                    ThreadList.FirstOrDefault(f => f.Name == Thread.CurrentThread.Name).RunStatus = false;
+                    break;
                 }
 
             }
@@ -164,6 +169,15 @@ namespace WebSpider
 
         private void CrawlContent(string url)
         {
+            if (HistoryUrlList.Contains(url))
+            {
+                return;
+            }
+            else
+            {
+                HistoryUrlList.Add(url);
+            }
+
             PageCrawlCompletedArgs e = new PageCrawlCompletedArgs();
             e.Url = url;
 
