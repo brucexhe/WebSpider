@@ -220,6 +220,10 @@ namespace WebSpider
 
         private void CrawLinks(string url, String html)
         {
+            if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(html))
+            {
+                return;
+            }
             try
             {
                 Regex reg = new Regex(@"<a\shref\s*=""(?<URL>[^""]*).*?>(?<title>[^<]*)</a>", RegexOptions.IgnoreCase | RegexOptions.Singleline);
