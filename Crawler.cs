@@ -94,10 +94,13 @@ namespace WebSpider
             for (int i = 0; i < Config.ThreadCount; i++)
             {
                 var th = new CrawlThread();
-                th.Thread = new System.Threading.Thread(new System.Threading.ThreadStart(WorkThread));
                 th.Name = "th_" + i;
-                th.Thread.Name = th.Name;
                 th.RunStatus = true;
+
+                th.Thread = new System.Threading.Thread(new System.Threading.ThreadStart(WorkThread));
+                th.Thread.IsBackground = true;
+                th.Thread.Name = th.Name;
+
 
 
                 ThreadList.Add(th);
@@ -122,6 +125,7 @@ namespace WebSpider
 
                 }
             }));
+            threadCheckCompleted.IsBackground = true;
             threadCheckCompleted.Start();
 
         }
